@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Build artifacts
+dist/
+
+# Autotask local state and logs (never commit task history/logs to git)
+.autotask/
+.opencode-wrapper/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS Files
+.DS_Store
+Thumbs.db
