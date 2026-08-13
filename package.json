@@ -4,9 +4,26 @@
   "description": "Terminal queue supervisor and execution orchestrator for AI coding agents",
   "type": "module",
   "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "bin": {
     "autotask": "./dist/cli.js",
     "ocq": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/9matesu/autotask.git"
+  },
+  "bugs": {
+    "url": "https://github.com/9matesu/autotask/issues"
+  },
+  "homepage": "https://github.com/9matesu/autotask#readme",
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsc",
