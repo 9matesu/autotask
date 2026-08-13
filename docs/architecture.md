@@ -1,15 +1,15 @@
 # Autotask Architecture
 
-Autotask is designed as a modular, local-first terminal supervisor for the OpenCode CLI.
+Autotask is designed as a modular, local-first terminal supervisor and orchestrator for autonomous coding agents.
 
 ## Architectural Layers
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
 │                       Ink TUI Layer                         │
-│  - App: Root container & layout                             │
+│  - App: Root container & split-pane layout                  │
 │  - Header, QueuePanel, ExecutionPanel, StatusBar            │
-│  - CommandInput: Keyboard hooks & autocomplete              │
+│  - CommandInput: History navigation & autocomplete          │
 ├─────────────────────────────────────────────────────────────┤
 │                      Supervisor Core                        │
 │  - TaskQueue: In-memory task list & input parser            │
@@ -28,9 +28,14 @@ Autotask is designed as a modular, local-first terminal supervisor for the OpenC
 │  - OpenCodeAdapter (Interface)                              │
 │  - OpenCodeCliRunner: NDJSON parser & subprocess manager    │
 │  - MockOpenCodeRunner: Deterministic test engine            │
+│  - Extensible Engine Adapters (Future agent integrations)   │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ## Sequential Execution Guarantee
 
-Autotask enforces `concurrency = 1`. Each task runs in sequence against the live working directory, ensuring subsequent tasks find the exact code and state created by earlier tasks.
+Autotask enforces `concurrency = 1`. Each task runs in sequence against the live working tree, ensuring subsequent tasks find the exact code and state created by earlier tasks.
+
+## Extensible Agent Adapter Pattern
+
+Execution is abstracted through the `OpenCodeAdapter` interface. While OpenCode CLI is the primary initial engine, the supervisor core (queue, retry loop, watchdog, git manager, state persistence) operates independently of the underlying coding agent.

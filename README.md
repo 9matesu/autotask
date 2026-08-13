@@ -1,42 +1,70 @@
-# Autotask (OpenCode Queue Wrapper)
+# Autotask
 
 ```text
-╭──────────────────────────────────────────────────────────────╮
-│                                                              │
-│        ██████╗ ██████╗ ███████╗███╗   ██╗                  │
-│       ██╔═══██╗██╔══██╗██╔════╝████╗  ██║                  │
-│       ██║   ██║██████╔╝█████╗  ██╔██╗ ██║                  │
-│       ██║   ██║██╔═══╝ ██╔══╝  ██║╚██╗██║                  │
-│       ╚██████╔╝██║     ███████╗██║ ╚████║                  │
-│        ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝                  │
-│                                                              │
-│                   A U T O T A S K                            │
-│                                                              │
-│              OpenCode Terminal Supervisor                   │
-│                                                              │
-╰──────────────────────────────────────────────────────────────╯
+╭─────────────────────────────────────────────────────────────────────────────╮
+│                                                                             │
+│   █████╗ ██╗   ██╗████████╗ ██████╗ ████████╗ █████╗ ███████╗██╗  ██╗       │
+│  ██╔══██╗██║   ██║╚══██╔══╝██╔═══██╗╚══██╔══╝██╔══██╗██╔════╝██║ ██╔╝       │
+│  ███████║██║   ██║   ██║   ██║   ██║   ██║   ███████║███████╗█████╔╝        │
+│  ██╔══██║██║   ██║   ██║   ██║   ██║   ██║   ██╔══██║╚════██║██╔═██╗        │
+│  ██║  ██║╚██████╔╝   ██║   ╚██████╔╝   ██║   ██║  ██║███████║██║  ██╗       │
+│  ╚═╝  ╚═╝ ╚═════╝    ╚═╝    ╚═════╝    ╚═╝   ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝       │
+│                                                                             │
+│               Autonomous Coding Queue Supervisor & Orchestrator              │
+│                                                                             │
+╰─────────────────────────────────────────────────────────────────────────────╯
 ```
 
-A local terminal supervisor and orchestrator for the **OpenCode CLI**.
+Autotask is a local terminal queue supervisor and execution orchestrator for AI coding agents. Designed for unattended, production-grade engineering workflows, Autotask manages multi-task sequential execution, process tree lifecycle enforcement, intelligent git-diff-aware retries, context overflow recovery, and automated Git checkpoints.
 
-Autotask allows you to queue multiple coding tasks, execute them sequentially within the same working repository, monitor agent progress through structured NDJSON streams, automatically recover from failures (HTTP 429 rate limits, context overflow, timeouts, crashes), execute safe Git checkpoints, and manage everything with an amber-themed TUI.
-
----
-
-## ⚡ Key Highlights
-
-* **Sequential Execution (`concurrency = 1`)**: Executes tasks one after another in the exact working directory left by prior tasks.
-* **Intelligent Retry**: On failures, inspects Git diff and prompts the agent to continue from existing progress rather than discarding work.
-* **Context Overflow & Compaction**: Detects token limit warnings and triggers session compaction via `/compact` or fresh sessions with diff context.
-* **Provider Rate-Limit Awareness**: Backs off with jitter on HTTP 429 and respects `Retry-After` headers for low-RPM providers.
-* **Windows Tree-Kill Safety**: Employs graceful escalation and native process tree termination to prevent orphaned MCP or tool processes.
-* **Safe Git Checkpoints**: Runs optional post-task verification commands (`npm test`, build scripts) and creates non-destructive commits (`agent: complete task #001 - <title>`).
-* **Rich Amber TUI**: Ink-powered terminal interface with split task queue and execution feed, command autocomplete, and status bar.
-* **Zero-Token Mock Mode**: Test the entire queue, TUI, and supervisor offline with `--mock`.
+Autotask ships with native support for the **OpenCode CLI** as its initial execution engine, backed by an extensible adapter architecture engineered for future agent engine integrations.
 
 ---
 
-## 🚀 Installation & Quick Start
+## Architectural Principles
+
+* **Cumulative Sequential Execution (`concurrency = 1`)**: Executes queued tasks sequentially against a single working tree, guaranteeing that each subsequent task builds upon the verified state left by prior completions.
+* **Intelligent Continuation & State Recovery**: Rather than blindly restarting failed tasks, Autotask computes repository state diffs and synthesizes continuation prompts that preserve completed progress.
+* **Context Overflow & Token Lifecycle Supervision**: Detects token exhaustion thresholds, orchestrates compaction requests, and provisions clean continuation sessions with delta context when limits are exceeded.
+* **Provider Rate-Limit Backoff**: Applies exponential backoff with randomized jitter and evaluates `Retry-After` headers to sustain long-running batches on low-RPM inference providers.
+* **Process Tree Isolation (Windows & POSIX)**: Enforces hard timeouts and idle watchdog monitoring, using native tree termination to prevent orphaned language server or tool subprocesses.
+* **Non-Destructive Git Checkpoints**: Runs optional pre-commit test suites and generates verified checkpoint commits without ever running destructive checkout or reset routines.
+* **Terminal Interface**: High-density Amber TUI built with Ink and React, featuring split-pane task tracking, streaming telemetry feeds, autocomplete slash commands, and status diagnostics.
+* **Zero-Token Mock Engine**: Built-in deterministic simulation runner for end-to-end queue and supervisor validation without API token consumption.
+
+---
+
+## System Architecture
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                      Autotask Interface                     │
+│  - Ink TUI: Split Queue & Streaming Execution Panes         │
+│  - Command Registry: Autocomplete Slash Commands            │
+├─────────────────────────────────────────────────────────────┤
+│                      Supervisor Core                        │
+│  - TaskQueue: Multi-Format Parser & Priority Scheduling     │
+│  - TaskRunner: Sequential State Machine & Lifecycle Hooks   │
+│  - RetryManager: Jitter Backoff & Continuation Synthesis    │
+│  - GitManager: Working Tree Verification & Safe Checkpoints │
+│  - ProcessMonitor: Watchdog Heartbeats & Tree Termination   │
+├─────────────────────────────────────────────────────────────┤
+│                    Storage & Diagnostics                    │
+│  - StateStore: Atomic queue.json State Persistence          │
+│  - TaskLogger: Secret-Redacted Per-Attempt Telemetry Logs   │
+│  - ConfigManager: Schema-Validated Configuration Store      │
+│  - DoctorService: Environment & Tool Diagnostic Engine      │
+├─────────────────────────────────────────────────────────────┤
+│                     Adapter Layer                           │
+│  - OpenCodeAdapter (Default Native Engine)                  │
+│  - MockOpenCodeRunner (Zero-Token Simulation Engine)        │
+│  - Future Agent Adapters (Claude Code, Codex, Custom)       │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Installation & Quick Start
 
 ### Global Installation
 
@@ -44,37 +72,37 @@ Autotask allows you to queue multiple coding tasks, execute them sequentially wi
 npm install -g autotask
 ```
 
-### Local Development / From Source
+### Local Build & Development
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/9matesu/autotask.git
 cd autotask
 npm install
 npm run build
 npm link
 ```
 
-### Running Autotask
+### Usage
 
-Launch in any repository:
+Launch Autotask in any local repository:
 
 ```bash
 autotask
 ```
 
-Or using the alias `ocq`:
+Alias:
 
 ```bash
 ocq
 ```
 
-Run in zero-token mock mode (simulates tasks and errors locally):
+Run in offline simulation mode:
 
 ```bash
 autotask --mock
 ```
 
-Run system and tool diagnostics:
+Run environment diagnostics:
 
 ```bash
 autotask --doctor
@@ -82,19 +110,19 @@ autotask --doctor
 
 ---
 
-## 🖥️ Terminal User Interface (TUI) Layout
+## Terminal User Interface
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
-│ AUTOTASK │ my-project │ BUILD │ Default │ ● RUNNING          │
+│ AUTOTASK │ repository-name │ BUILD │ OpenCode │ ● RUNNING    │
 ├───────────────────────────────┬──────────────────────────────┤
 │ TASK QUEUE (5 total)          │ EXECUTION LOG                │
 │                               │                              │
-│ ▶ #001 [RUNNING] Authentication│ 20:00:15 > Reading files     │
-│   #002 [PENDING] Refresh token│ 20:00:18 ⚙ edit_file (auth.ts│
-│   #003 [PENDING] Tests        │ 20:00:22 ✓ Changes applied   │
+│ ▶ #001 [RUNNING] Auth Module  │ 20:00:15 > Reading directory │
+│   #002 [PENDING] Token Refresh│ 20:00:18 > Executing tool    │
+│   #003 [PENDING] Unit Tests   │ 20:00:22 > Applying patch    │
 │   #004 [PENDING] Middleware   │                              │
-│   #005 [PENDING] Docs         │                              │
+│   #005 [PENDING] Documentation│                              │
 ├───────────────────────────────┴──────────────────────────────┤
 │ Task #001 │ Attempt 1/3 │ 00:42 │ Tokens: 1630               │
 ├──────────────────────────────────────────────────────────────┤
@@ -104,66 +132,66 @@ autotask --doctor
 
 ---
 
-## ⌨️ Adding Tasks
+## Task Input & Parsing
 
-You can add tasks by typing directly or pasting lists. Autotask automatically parses:
+Tasks can be entered interactively or pasted in batches. Autotask parses standard input patterns:
 
-### 1. Direct command or typing
+### Single Task Command
 ```text
-/add Fix JWT authentication logic
+/add Implement OAuth2 token refresh endpoint
 ```
-or simply typing the prompt in the input line without `/add`.
+Or type the instruction directly into the prompt without a prefix.
 
-### 2. Bulleted Lists (Pasted via clipboard)
+### Bulleted Lists (Clipboard Paste)
 ```text
-- Fix login authentication
-* Add refresh token endpoint
-• Write unit tests for JWT
-```
-
-### 3. Numbered Lists
-```text
-1. Refactor auth controller
-2. Add rate limiting middleware
-3. Update OpenAPI swagger docs
+- Implement OAuth2 authorization code flow
+* Add JWT payload verification middleware
+• Write unit tests for token expiration
 ```
 
-### 4. Agent Mode Tags
-You can specify `[PLAN]` or `[BUILD]` per task:
+### Numbered Action Lists
 ```text
-[PLAN] Analyze database schema migration
+1. Refactor authentication controller
+2. Add rate limiting middleware to public endpoints
+3. Update OpenAPI schema documentation
+```
+
+### Mode Tags
+Target specific agent execution profiles per task:
+```text
+[PLAN] Analyze database schema migration strategy
 [BUILD] Implement user registration endpoint
 @plan Review API security headers
 ```
 
 ---
 
-## 🛠️ Slash Commands
+## Slash Commands
 
 | Command | Aliases | Description |
 | :--- | :--- | :--- |
-| `/help` | `/?`, `/h` | Show list of available commands and descriptions |
-| `/add <text>` | `/task`, `/paste` | Add one or multiple tasks (supports bulleted and numbered lists) |
-| `/start` | `/resume`, `/run` | Start/resume processing pending tasks in the queue |
+| `/help` | `/?`, `/h` | Display command reference and operational hints |
+| `/add <text>` | `/task`, `/paste` | Enqueue tasks from text or multiline lists |
+| `/start` | `/resume`, `/run` | Start or resume queue processing |
 | `/pause` | — | Pause the queue supervisor |
-| `/stop` | — | Gracefully terminate the active OpenCode task and pause queue |
-| `/queue` | `/tasks`, `/status`| Display full overview of tasks and attempts |
-| `/retry <id>`| — | Reset and requeue a specific task (e.g. `/retry 001`) |
-| `/skip <id>` | — | Skip a specific pending/failed task |
-| `/clear` | — | Remove completed and skipped tasks from the queue |
-| `/doctor` | — | Run comprehensive environment and tool health diagnostics |
-| `/git` | — | Check git status and uncommitted changes |
-| `/diff` | — | Display current git diff summary |
-| `/log [id]` | `/logs` | View recent logs or specific task attempt logs |
-| `/mode <plan\|build>` | — | Switch the default agent mode |
-| `/config` | — | Print active configuration JSON |
-| `/quit` | `/q`, `/exit` | Exit Autotask |
+| `/stop` | — | Terminate active task execution tree and pause queue |
+| `/queue` | `/tasks`, `/status`| Display overview of tasks, statuses, and attempts |
+| `/retry <id>`| — | Requeue a specific task for re-execution (e.g., `/retry 001`) |
+| `/skip <id>` | — | Mark a pending or failed task as skipped |
+| `/clear` | — | Purge completed and skipped tasks from the queue |
+| `/doctor` | — | Execute diagnostic checks on Node, Git, OpenCode, and storage |
+| `/git` | — | Inspect working branch and uncommitted change count |
+| `/diff` | — | Print working tree git diff summary |
+| `/log [id]` | `/logs` | Display recent execution logs or specific attempt output |
+| `/mode <plan\|build>` | — | Switch the default agent execution mode |
+| `/config` | — | Output active configuration JSON |
+| `/quit` | `/q`, `/exit` | Terminate session and exit Autotask |
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
-Autotask stores its configuration at `.autotask/config.json`:
+Configuration is loaded from `.autotask/config.json`:
 
 ```json
 {
@@ -211,16 +239,17 @@ Autotask stores its configuration at `.autotask/config.json`:
 
 ---
 
-## 🛡️ Security & Privacy
+## Security & Reliability
 
-* **Secrets Redaction**: Autotask automatically redacts API keys, tokens, and authorization headers (`sk-...`, `nvapi-...`, `Bearer ...`, `Authorization: ...`) before writing logs.
-* **Non-Destructive Operations**: Autotask never executes `git reset --hard` or `git clean`. All changes made by the AI agent remain safe in the working directory.
+* **Automatic Credential Redaction**: Telemetry pipelines automatically sanitize API keys, bearer tokens, and credentials (`sk-...`, `nvapi-...`, `Bearer ...`, `Authorization: ...`) prior to writing logs.
+* **Non-Destructive Operations**: Working directory modifications are preserved across retries; Autotask never invokes destructive Git clean or hard resets.
+* **Atomic State Persistence**: Queue state updates are committed via temporary file replacement and fsync routines to protect against power interruption or process termination.
 
 ---
 
-## 🧪 Testing
+## Verification & Testing
 
-Run the automated test suite with Vitest:
+Execute the automated test suite with Vitest:
 
 ```bash
 npm test
@@ -228,6 +257,6 @@ npm test
 
 ---
 
-## 📄 License
+## License
 
 MIT © Autotask Contributors

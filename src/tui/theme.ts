@@ -33,7 +33,7 @@ export const SYMBOLS = {
   bullet: '•',
   spinner: '⠋',
   clock: '◷',
-  gear: '⚙',
+  tool: '>',
   box: '■',
 };
 

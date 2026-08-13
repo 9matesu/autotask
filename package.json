@@ -1,7 +1,7 @@
 {
   "name": "autotask",
   "version": "0.1.0",
-  "description": "Terminal queue supervisor and orchestrator for OpenCode CLI",
+  "description": "Terminal queue supervisor and execution orchestrator for AI coding agents",
   "type": "module",
   "main": "./dist/index.js",
   "bin": {
@@ -18,14 +18,15 @@
     "prepublishOnly": "npm run build && npm test"
   },
   "keywords": [
-    "opencode",
+    "ai-coding",
+    "autonomous-agent",
     "queue",
     "supervisor",
     "orchestrator",
     "terminal",
     "tui",
-    "ai-agent",
-    "automation"
+    "opencode",
+    "task-runner"
   ],
   "author": "Autotask Contributors",
   "license": "MIT",
