@@ -1,5 +1,5 @@
 {
-  "name": "autotask",
+  "name": "@9matesu/autotask",
   "version": "0.1.0",
   "description": "Terminal queue supervisor and execution orchestrator for AI coding agents",
   "type": "module",

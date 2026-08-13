@@ -69,7 +69,7 @@ Autotask ships with native support for the **OpenCode CLI** as its initial execu
 ### Global Installation
 
 ```bash
-npm install -g autotask
+npm install -g @9matesu/autotask
 ```
 
 ### Local Build & Development
