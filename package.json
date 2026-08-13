@@ -6,8 +6,8 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "autotask": "./dist/cli.js",
-    "ocq": "./dist/cli.js"
+    "autotask": "dist/cli.js",
+    "ocq": "dist/cli.js"
   },
   "files": [
     "dist",
@@ -32,7 +32,11 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run build && npm test"
+    "prepublishOnly": "npm run build && npm test",
+    "release": "npm publish --access public",
+    "release:patch": "npm version patch && git push --follow-tags && npm publish --access public",
+    "release:minor": "npm version minor && git push --follow-tags && npm publish --access public",
+    "release:major": "npm version major && git push --follow-tags && npm publish --access public"
   },
   "keywords": [
     "ai-coding",

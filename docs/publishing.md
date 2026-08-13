@@ -1,57 +1,58 @@
-# npm Publishing & Distribution
+# Publishing to npm
 
-Autotask is configured for automated distribution to the official npm registry.
-
-## Automated Release via GitHub Actions
-
-The repository includes an automated publishing workflow in `.github/workflows/publish.yml`.
-
-### One-Time Setup:
-1. Create an Automation Access Token on [npmjs.com](https://www.npmjs.com/) (Access Tokens -> Generate New Token -> Automation).
-2. In the GitHub repository settings (`https://github.com/9matesu/autotask/settings/secrets/actions`), add a new Repository Secret:
-   - **Name**: `NPM_TOKEN`
-   - **Value**: Your npm access token.
-
-### Triggering a Release:
-
-#### Option A: Create a GitHub Release
-1. Create a git tag and push it:
-   ```bash
-   npm version patch # or minor / major
-   git push origin main --tags
-   ```
-2. On GitHub, create a new Release from the tag. The workflow will automatically test, build, and publish the package with provenance.
-
-#### Option B: Manual Workflow Trigger
-1. Go to **Actions** -> **Publish to npm** -> **Run workflow**.
-2. Select tag (`latest` or `beta`) and trigger.
+The standard baseline publishing workflow for Autotask uses direct terminal release with npm's built-in `prepublishOnly` lifecycle hooks (which automatically execute TypeScript compilation and the Vitest test suite prior to packaging).
 
 ---
 
-## Manual Publishing from Terminal
+## Standard Release Commands
 
-If logged in to npm via `npm login`:
+Publishing new versions from your terminal:
 
+### 1. Patch Release (e.g. `0.1.0` -> `0.1.1`)
 ```bash
-npm run typecheck
-npm run build
-npm test
-npm publish --access public
+npm run release:patch
+```
+* Bumps patch version in `package.json`
+* Creates a git tag and pushes to GitHub
+* Runs typecheck, build, and unit tests automatically
+* Publishes `@9matesu/autotask` to npm
+
+### 2. Minor Feature Release (e.g. `0.1.0` -> `0.2.0`)
+```bash
+npm run release:minor
+```
+
+### 3. Major Breaking Release (e.g. `0.1.0` -> `1.0.0`)
+```bash
+npm run release:major
+```
+
+### 4. Direct Publish Current Version
+```bash
+npm run release
 ```
 
 ---
 
-## User Installation & Execution
+## Global Installation for Users
 
-Once published on npm, users anywhere can install and run Autotask with:
+Once published, users install and run Autotask globally via:
 
-### Global Install
 ```bash
-npm install -g autotask
+npm install -g @9matesu/autotask
+```
+
+### CLI Commands Available:
+```bash
+# Launch interactive Amber TUI
 autotask
-```
 
-### Direct Execution via npx
-```bash
-npx autotask
+# Or short alias
+ocq
+
+# Offline zero-token simulation mode
+autotask --mock
+
+# Run system diagnostic checks
+autotask --doctor
 ```
