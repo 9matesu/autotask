@@ -22,7 +22,7 @@ const program = new Command();
 program
   .name('autotask')
   .description('Terminal queue supervisor and execution orchestrator for AI coding agents')
-  .version('0.1.0')
+  .version('0.1.1')
   .option('-p, --project <path>', 'Working directory repository path', '.')
   .option('-m, --mock', 'Run with simulated OpenCode mock runner (zero tokens)', false)
   .option('-d, --doctor', 'Run system and environment diagnostic checks', false)
