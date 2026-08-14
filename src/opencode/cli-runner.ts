@@ -1,4 +1,4 @@
-import { ChildProcess, spawn, exec } from 'node:child_process';
+import { ChildProcess, spawn, execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import readline from 'node:readline';
 import { OpenCodeAdapter } from './adapter.js';
@@ -7,7 +7,7 @@ import { ProcessMonitor } from '../process/process-monitor.js';
 import { TaskLogger } from '../logging/logger.js';
 import { AutotaskConfig } from '../types/config.js';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 export class OpenCodeCliRunner implements OpenCodeAdapter {
   private config: AutotaskConfig;
@@ -23,7 +23,8 @@ export class OpenCodeCliRunner implements OpenCodeAdapter {
   public async checkHealth(): Promise<OpenCodeHealth> {
     const cmd = this.config.opencode.command || 'opencode';
     try {
-      const { stdout } = await execAsync(`${cmd} --version`);
+      // Use execFile to avoid shell injection — the command and '--version' are passed as separate arguments
+      const { stdout } = await execFileAsync(cmd, ['--version']);
       const version = stdout.trim();
       return {
         installed: true,
@@ -103,10 +104,12 @@ export class OpenCodeCliRunner implements OpenCodeAdapter {
 
       this.activeMonitor = monitor;
 
-      // Spawn subprocess (use shell: true for Windows .cmd/.ps1 batch wrapper resolution)
+      // Spawn subprocess without shell to avoid shell metacharacter injection.
+      // On Windows, if the command is a .cmd/.bat wrapper, Node.js spawn handles
+      // resolution automatically when the full command name is provided.
       const child = spawn(cmd, args, {
         cwd: options.workingDir,
-        shell: true,
+        shell: process.platform === 'win32',
         env: { ...process.env, FORCE_COLOR: '0' },
         stdio: ['pipe', 'pipe', 'pipe'],
       });

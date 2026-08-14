@@ -1,9 +1,10 @@
-import { exec } from 'node:child_process';
+import { exec, execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { TaskLogger } from '../logging/logger.js';
 import { Task } from '../types/task.js';
 
 const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 export interface GitStatusResult {
   isGitRepo: boolean;
@@ -31,13 +32,13 @@ export class GitManager {
 
   public async checkStatus(): Promise<GitStatusResult> {
     try {
-      const { stdout: isRepo } = await execAsync('git rev-parse --is-inside-work-tree', { cwd: this.repoDir });
+      const { stdout: isRepo } = await execFileAsync('git', ['rev-parse', '--is-inside-work-tree'], { cwd: this.repoDir });
       if (isRepo.trim() !== 'true') {
         return { isGitRepo: false, hasChanges: false, changedFilesCount: 0 };
       }
 
-      const { stdout: branchOut } = await execAsync('git branch --show-current', { cwd: this.repoDir }).catch(() => ({ stdout: '' }));
-      const { stdout: statusOut } = await execAsync('git status --porcelain', { cwd: this.repoDir });
+      const { stdout: branchOut } = await execFileAsync('git', ['branch', '--show-current'], { cwd: this.repoDir }).catch(() => ({ stdout: '' }));
+      const { stdout: statusOut } = await execFileAsync('git', ['status', '--porcelain'], { cwd: this.repoDir });
 
       const lines = statusOut.split('\n').filter((l) => l.trim().length > 0);
       return {
@@ -58,7 +59,7 @@ export class GitManager {
 
   public async getDiffSummary(): Promise<string> {
     try {
-      const { stdout } = await execAsync('git diff --stat', { cwd: this.repoDir });
+      const { stdout } = await execFileAsync('git', ['diff', '--stat'], { cwd: this.repoDir });
       return stdout.trim();
     } catch {
       return '';
@@ -68,7 +69,9 @@ export class GitManager {
   public async runValidationCommand(command: string): Promise<ValidationResult> {
     this.logger?.info('GIT', `Running post-task validation command: ${command}`);
     try {
-      const { stdout, stderr } = await execAsync(command, { cwd: this.repoDir, timeout: 120000 });
+      // Note: validation commands intentionally use shell exec since they may contain
+      // pipes, redirects, or other shell features configured by the user.
+      const { stdout, stderr } = await execAsync(command, { cwd: this.repoDir, timeout: 120000, maxBuffer: 10 * 1024 * 1024 });
       const combined = `${stdout}\n${stderr}`.trim();
       return {
         success: true,
@@ -103,10 +106,9 @@ export class GitManager {
     const message = `${commitPrefix} #${task.id} - ${task.title}`;
     try {
       this.logger?.info('GIT', `Creating checkpoint commit: "${message}"`);
-      await execAsync('git add -A', { cwd: this.repoDir });
-      // Escape commit message for Windows/PowerShell/sh safety
-      const escaped = message.replace(/"/g, '\\"');
-      await execAsync(`git commit -m "${escaped}"`, { cwd: this.repoDir });
+      // Use execFile with argument arrays to prevent shell injection from task titles
+      await execFileAsync('git', ['add', '-A'], { cwd: this.repoDir });
+      await execFileAsync('git', ['commit', '-m', message], { cwd: this.repoDir });
       return { committed: true, commitMessage: message };
     } catch (err) {
       this.logger?.error('GIT', `Failed to create git checkpoint: ${String(err)}`);

@@ -1,4 +1,4 @@
-import { ChildProcess, exec } from 'node:child_process';
+import { ChildProcess, execFile } from 'node:child_process';
 import treeKill from 'tree-kill';
 import { TaskLogger } from '../logging/logger.js';
 
@@ -87,13 +87,20 @@ export class ProcessMonitor {
     }
 
     const pid = this.childProcess.pid;
+
+    // Validate PID is a safe integer before using it in any system call
+    if (!Number.isInteger(pid) || pid <= 0) {
+      this.options.logger?.error('SYSTEM', `Invalid PID value: ${pid}. Skipping process termination.`);
+      return;
+    }
+
     this.options.logger?.info('SYSTEM', `Terminating process tree for PID ${pid} with signal ${signal}...`);
 
     return new Promise<void>((resolve) => {
       // For Windows, try graceful tree kill
       if (process.platform === 'win32') {
-        // Run taskkill /PID <pid> /T /F
-        exec(`taskkill /PID ${pid} /T /F`, (err) => {
+        // Use execFile to avoid shell injection — arguments are passed as an array, not interpolated into a shell string
+        execFile('taskkill', ['/PID', String(pid), '/T', '/F'], (err) => {
           if (err) {
             // Fallback to tree-kill module
             treeKill(pid, 'SIGKILL', () => resolve());

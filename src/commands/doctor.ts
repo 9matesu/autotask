@@ -1,11 +1,11 @@
-import { exec } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import fs from 'node:fs';
 import path from 'node:path';
 import { OpenCodeAdapter } from '../opencode/adapter.js';
 import { AutotaskConfig } from '../types/config.js';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 export interface DiagnosticItem {
   name: string;
@@ -44,7 +44,7 @@ export class DoctorService {
 
     // 2. Git CLI Check
     try {
-      const { stdout } = await execAsync('git --version');
+      const { stdout } = await execFileAsync('git', ['--version']);
       items.push({
         name: 'Git CLI',
         ok: true,
@@ -60,7 +60,7 @@ export class DoctorService {
 
     // 3. Repository Check
     try {
-      const { stdout } = await execAsync('git rev-parse --is-inside-work-tree', { cwd: this.workingDir });
+      const { stdout } = await execFileAsync('git', ['rev-parse', '--is-inside-work-tree'], { cwd: this.workingDir });
       items.push({
         name: 'Repository',
         ok: stdout.trim() === 'true',
